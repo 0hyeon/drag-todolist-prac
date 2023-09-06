@@ -1,10 +1,12 @@
 import React from "react";
 import styled from "styled-components";
-import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
-
+import { DragDropContext, DropResult } from "react-beautiful-dnd";
+import { useRecoilState } from "recoil";
+import { toDoState } from "./atoms";
+import Board from "./Components/Board";
 const Wrapper = styled.div`
   display: flex;
-  max-width: 400px;
+  max-width: 680px;
   width: 100%;
   margin: 0 auto;
   justify-content: center;
@@ -15,50 +17,61 @@ const Wrapper = styled.div`
 const Boards = styled.div`
   display: grid;
   width: 100%;
-  grid-template-columns: repeat(1, 1fr);
+  gap: 100px;
+  grid-template-columns: repeat(3, 1fr);
 `;
-const Board = styled.div`
-  padding: 2px 10px;
-  padding-top: 30px;
-  background-color: ${(props) => props.theme.boardColor};
-  border-radius: 5px;
-  min-height: 200px;
-  background-color: #ddd;
-`;
-const Card = styled.div`
-  border-radius: 5px;
-  padding: 10px 10px;
-  background-color: #fff;
-  margin-bottom: 5px;
-`;
-const toDos = ["a", "b", "c", "d", "e", "f", "g", "h"];
+
 function App() {
-  const onDragEnd = () => {};
+  // 수정까지 하고싶다면 useRecoilState함수
+  const [toDos, setTodos] = useRecoilState(toDoState);
+  const onDragEnd = (Info: DropResult) => {
+    console.log(Info);
+    const { destination, draggableId, source } = Info;
+    if (!destination) return;
+    //같은보드라면,
+    if (destination?.droppableId === source.droppableId) {
+      //oldToDos 참고
+      // let oldToDos: {
+      //   key: "toDo";
+      //   default: {
+      //     "To Do": ["a", "b"];
+      //     Doing: ["c", "d", "e"];
+      //     Done: ["f"];
+      //   }
+      // };
+
+      setTodos((allboards) => {
+        const boardCopy = [...allboards[source.droppableId]];
+        boardCopy.splice(source.index, 1);
+        boardCopy.splice(destination?.index, 0, draggableId);
+        return {
+          ...allboards,
+          [source.droppableId]: boardCopy,
+        };
+      });
+    }
+    //다른보드이면?
+    if (destination?.droppableId !== source.droppableId) {
+      console.log("다른보드!!");
+    }
+
+    //단일보드일때
+    // default: ["a", "b", "c", "d", "e", "f", "g", "h"],
+    // if (!destination) return;
+    // setTodos((prev) => {
+    //   const todosCopy = [...prev];
+    //   todosCopy.splice(source.index, 1);
+    //   todosCopy.splice(destination?.index, 0, draggableId);
+    //   return todosCopy;
+    // });
+  };
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <Wrapper>
         <Boards>
-          <Droppable droppableId="one">
-            {(magic) => (
-              <Board ref={magic.innerRef} {...magic.droppableProps}>
-                {toDos.map((toDo, index) => (
-                  <Draggable draggableId={toDo} index={index}>
-                    {(magic) => (
-                      <Card
-                        ref={magic.innerRef}
-                        {...magic.dragHandleProps}
-                        {...magic.draggableProps}
-                      >
-                        {toDo}
-                      </Card>
-                    )}
-                  </Draggable>
-                ))}
-                {/* 사이즈 안변하고 유지 */}
-                {magic.placeholder}
-              </Board>
-            )}
-          </Droppable>
+          {Object.keys(toDos).map((boardId) => (
+            <Board key={boardId} toDos={toDos[boardId]} boardId={boardId} />
+          ))}
         </Boards>
       </Wrapper>
     </DragDropContext>
