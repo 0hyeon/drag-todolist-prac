@@ -52,7 +52,17 @@ function App() {
     }
     //다른보드이면?
     if (destination?.droppableId !== source.droppableId) {
-      console.log("다른보드!!");
+      setTodos((allboards) => {
+        const sourceBoard = [...allboards[source.droppableId]];
+        const destinationBoard = [...allboards[destination.droppableId]];
+        sourceBoard.splice(source.index, 1);
+        destinationBoard.splice(destination?.index, 0, draggableId);
+        return {
+          ...allboards,
+          [source.droppableId]: sourceBoard,
+          [destination.droppableId]: destinationBoard,
+        };
+      });
     }
 
     //단일보드일때
